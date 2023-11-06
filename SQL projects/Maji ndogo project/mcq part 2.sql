@@ -62,19 +62,28 @@ We will use the GROUPBY function
 
 SELECT town_name, COUNT(*) AS number_of_employees
 FROM employee
-GROUP BY town_name;
+GROUP BY town_name
+limit 20;
+
+-- total number of employees
+SELECT employee_name, count(*) AS total_number_of_employees
+FROM employee;
 
 -- Three top field surveyors with the most location visits
 SELECT assigned_employee_id, COUNT(*) AS location_visits
 FROM visits
 GROUP BY assigned_employee_id
-ORDER BY location_visits DESC
-LIMIT 3;
+ORDER BY location_visits DESC;
 
 -- Let's use the top 3 assigned_employee_id and use the to ceate a qery that looks up the employee's info
 SELECT employee_name, email, phone_number
 FROM employee
 WHERE assigned_employee_id IN (1, 30, 34);
+
+-- Worst performing workers
+SELECT employee_name, email, phone_number
+FROM employee
+WHERE assigned_employee_id IN (20, 22, 44);
 
 /* Analysing Locations
 Let's focus on the province_name, town_name and location_type
@@ -130,8 +139,34 @@ SELECT SUM(number_of_people_served) AS total_people_surveyed
 FROM water_source;
 
 -- Let's calculate percentages using the total we just got.
+SELECT
+    type_of_water_source,
+    SUM(number_of_people_served) AS total_people_served,
+    ROUND((SUM(number_of_people_served) / t.total_people_surveyed) * 100, 0) AS percentage
+FROM water_source
+CROSS JOIN (
+    SELECT SUM(number_of_people_served) AS total_people_surveyed
+    FROM water_source
+) t
+GROUP BY type_of_water_source
+ORDER BY total_people_served DESC;
 
-    
+SELECT type_of_water_source,
+       SUM(number_of_people_served) AS population_served,
+       RANK() OVER (ORDER BY SUM(number_of_people_served) DESC) AS ranked_by_population
+FROM water_source
+GROUP BY type_of_water_source
+ORDER BY population_served DESC;
 
-    
+-- Analysing queues
+SELECT 
+    location_id,
+    time_in_queue,
+    AVG(time_in_queue) OVER (PARTITION BY location_id ORDER BY visit_count) AS total_avg_queue_time
+FROM 
+    visits
+WHERE 
+visit_count > 1 -- Only shared taps were visited > 1
+ORDER BY 
+    location_id, time_of_record;
 
